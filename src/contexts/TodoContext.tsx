@@ -7,18 +7,19 @@ import { Toast } from '../components/Toast';
 
 export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [todos, setTodos] = useState<Todo[]>([]);
+  const [isInitialized, setIsInitialized] = useState(false);
   const [storageError, setStorageError] = useState<string | null>(null);
 
   // Load todos from sessionStorage on initialization
   useEffect(() => {
     const savedTodos = loadTodos();
     setTodos(savedTodos);
+    setIsInitialized(true);
   }, []);
 
-  // Save todos to sessionStorage whenever todos change
+  // Save todos to sessionStorage whenever todos change (after initialization)
   useEffect(() => {
-    // Skip saving on initial empty state to avoid clearing existing data unnecessarily
-    if (todos.length === 0) {
+    if (!isInitialized) {
       return;
     }
     
@@ -26,7 +27,7 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (error) {
       setStorageError(error);
     }
-  }, [todos]);
+  }, [todos, isInitialized]);
 
   const addTodo = (title: string, description: string) => {
     const newTodo: Todo = {
@@ -36,17 +37,7 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children
       completed: false,
       createdAt: new Date(),
     };
-    setTodos(prevTodos => {
-      const updatedTodos = [...prevTodos, newTodo];
-      
-      // Save immediately for add operations
-      const error = saveTodos(updatedTodos);
-      if (error) {
-        setStorageError(error);
-      }
-      
-      return updatedTodos;
-    });
+    setTodos(prevTodos => [...prevTodos, newTodo]);
   };
 
   const editTodo = (id: string, updates: Partial<Todo>) => {
